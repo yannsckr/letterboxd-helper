@@ -1,11 +1,27 @@
-// A chave vem do config.js (arquivo fora do Git). Veja o README.
-const TMDB_KEY = window.TMDB_KEY || "";
+// Compatível com os formatos mais comuns de config.js.
+// Exemplos aceitos:
+// window.TMDB_KEY = "..."
+// window.TMDB_API_KEY = "..."
+// const TMDB_KEY = "..."
+// const TMDB_API_KEY = "..."
+function getTMDBCredential(){
+  try {
+    if (typeof TMDB_KEY !== "undefined" && TMDB_KEY) return TMDB_KEY;
+  } catch(e) {}
+  try {
+    if (typeof TMDB_API_KEY !== "undefined" && TMDB_API_KEY) return TMDB_API_KEY;
+  } catch(e) {}
+  return window.TMDB_KEY || window.TMDB_API_KEY || window.TMDB_TOKEN || "";
+}
+
+const TMDB_KEY = getTMDBCredential();
 
 const $ = id => document.getElementById(id);
 const ls = {
   get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},
   set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
+
 const state = {
   key: TMDB_KEY.startsWith("COLE") ? "" : TMDB_KEY,
   movies: ls.get("lbMovies",[]), results:[], bulk:[], open:new Set()
@@ -18,9 +34,18 @@ const inList = id => state.movies.some(x=>String(x.tmdbID)===String(id));
 const setStatus = t => { $("status").textContent = t; };
 
 /* Tema */
-function applyTheme(t){document.documentElement.dataset.theme=t;$("themeBtn").textContent=t==="light"?"🌙":"☀️";}
-$("themeBtn").onclick=()=>{const n=document.documentElement.dataset.theme==="light"?"dark":"light";try{localStorage.setItem("lbTheme",n)}catch(e){}applyTheme(n);};
-applyTheme(document.documentElement.dataset.theme||"dark");
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  const light=t==="light";
+  $("themeBtn").textContent=light?"☼":"☾";
+  $("themeBtn").setAttribute("aria-label",light?"Ativar tema escuro":"Ativar tema claro");
+}
+$("themeBtn").onclick=()=>{
+  const n=document.documentElement.dataset.theme==="light"?"dark":"light";
+  try{localStorage.setItem("lbTheme",n)}catch(e){}
+  applyTheme(n);
+};
+applyTheme(document.documentElement.dataset.theme||"light");
 
 /* Tutorial */
 $("tutBtn").onclick=()=>$("tut").showModal();
@@ -36,9 +61,37 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{
 
 /* TMDB */
 async function tmdb(q,year){
-  const u=`https://api.themoviedb.org/3/search/movie?api_key=${encodeURIComponent(state.key)}&language=pt-BR&include_adult=false&query=${encodeURIComponent(q)}${year?`&year=${year}`:""}`;
-  const r=await fetch(u); if(!r.ok) throw new Error(r.status);
-  return (await r.json()).results||[];
+  if(!state.key) throw new Error("TMDB_KEY_MISSING");
+
+  const isBearer = /^Bearer\s/i.test(state.key) || state.key.split(".").length === 3;
+  const params = new URLSearchParams({
+    language:"pt-BR",
+    include_adult:"false",
+    query:q
+  });
+  if(year) params.set("year",year);
+
+  const headers = {};
+  let url = `https://api.themoviedb.org/3/search/movie?${params.toString()}`;
+
+  if(isBearer){
+    headers.Authorization = /^Bearer\s/i.test(state.key) ? state.key : `Bearer ${state.key}`;
+  }else{
+    params.set("api_key",state.key);
+    url = `https://api.themoviedb.org/3/search/movie?${params.toString()}`;
+  }
+
+  const r = await fetch(url,{headers});
+  let data = {};
+  try { data = await r.json(); } catch(e) {}
+
+  if(!r.ok){
+    const detail = data.status_message || `HTTP ${r.status}`;
+    const err = new Error(detail);
+    err.status = r.status;
+    throw err;
+  }
+  return data.results || [];
 }
 
 /* Lista */
@@ -50,7 +103,7 @@ function addMovie(m){
 function save(){ls.set("lbMovies",state.movies);renderList();}
 function counter(){$("counter").textContent=`${state.movies.filter(x=>x.rating).length}/${state.movies.length} avaliados`;}
 
-/* Busca com botão + */
+/* Busca */
 async function search(){
   const q=$("search").value.trim(); if(!q) return;
   if(!state.key){setStatus("A chave do TMDB não foi configurada (config.js).");return;}
@@ -59,7 +112,13 @@ async function search(){
     state.results=(await tmdb(q)).slice(0,8);
     setStatus(state.results.length?`${state.results.length} resultado(s). Toque em + para adicionar.`:"Nenhum filme encontrado.");
     renderResults();
-  }catch(e){setStatus("Erro ao consultar o TMDB. Confira a chave e a conexão.");console.error(e);}
+  }catch(e){
+    console.error("TMDB error:",e);
+    if(e.message === "TMDB_KEY_MISSING") setStatus("A chave do TMDB não foi encontrada no config.js.");
+    else if(e.status === 7 || e.status === 401) setStatus("O TMDB recusou a chave/token. Confira o valor no config.js.");
+    else if(e.status === 429) setStatus("O TMDB atingiu o limite de consultas. Tente novamente em alguns instantes.");
+    else setStatus(`Erro no TMDB: ${e.message || "verifique a conexão"}.`);
+  }
 }
 function renderResults(){
   $("results").innerHTML=state.results.map(m=>`
@@ -123,7 +182,7 @@ const parseLine=l=>{const m=l.match(/^(.*?)\s*\((\d{4})\)\s*$/);return m?{t:m[1]
 let running=false;
 $("bulkRun").onclick=async()=>{
   if(running) return;
-  if(!state.key){$("bulkStatus").textContent="A chave do TMDB não foi configurada (config.js).";return;}
+  if(!state.key){$("bulkStatus").textContent="A chave do TMDB não está configurada (config.js).";return;}
   const seen=new Set(), lines=$("bulkText").value.split(/\r?\n/).map(s=>s.trim()).filter(s=>s&&!seen.has(s.toLowerCase())&&seen.add(s.toLowerCase()));
   if(!lines.length){$("bulkStatus").textContent="Cole ao menos um título.";return;}
   running=true;$("bulkRun").disabled=true;
@@ -166,7 +225,7 @@ $("bulkAdd").onclick=()=>{
 };
 $("bulkCopy").onclick=async()=>{
   const t=$("bulkNotFoundText");
-  try{await navigator.clipboard.writeText(t.value);}catch(e){t.select();document.execCommand("copy");}
+  try{await navigator.clipboard.writeText(t.value)}catch(e){t.select();document.execCommand("copy")}
   $("bulkStatus").textContent="Lista copiada.";
 };
 

@@ -4,81 +4,167 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Letterboxd Helper</title>
-<script>(function(){var t=null;try{t=localStorage.getItem("lbTheme")}catch(e){}if(!t)t=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";document.documentElement.dataset.theme=t})()</script>
+<script>
+(function(){
+  var t=null;
+  try{t=localStorage.getItem("lbTheme")}catch(e){}
+  if(!t)t="light";
+  document.documentElement.dataset.theme=t;
+})();
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="top">
-  <div><h1>🎬 Letterboxd Helper</h1><p>Pesquise, avalie e leve seus filmes para o Letterboxd.</p></div>
-  <div class="tools">
-    <button class="ghost" id="tutBtn" type="button">❔ Tutorial</button>
-    <button class="ghost" id="themeBtn" type="button" aria-label="Alternar tema">☀️</button>
-  </div>
-</header>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+  <div class="grain"></div>
 
-<main>
-  <section class="card">
-    <nav class="seg" role="tablist">
-      <button class="tab on" data-tab="tabSearch" type="button">Pesquisar</button>
-      <button class="tab" data-tab="tabBulk" type="button">Importar lista</button>
-    </nav>
+  <header class="top shell">
+    <a class="brand" href="#" aria-label="Letterboxd Helper">
+      <span class="brand-mark">L</span>
+      <span>
+        <strong>letterboxd helper</strong>
+        <small></small>
+      </span>
+    </a>
 
-    <div id="tabSearch">
-      <div class="row2"><input id="search" placeholder="Digite um filme, ex.: Sonic 2" autocomplete="off"><button id="searchBtn" type="button">Buscar</button></div>
-      <p id="status" class="status"></p>
-      <div id="results" class="results"></div>
+    <div class="top-copy">
+      <span class="eyebrow"></span>
+      <h1>Escolha seus filmes favoritos,<br><em>Deixe o resto comigo :P</em></h1>
+      <p>Avalie e organize sua lista para o Letterboxd.</p>
     </div>
 
-    <div id="tabBulk" hidden>
-      <textarea id="bulkText" rows="6" placeholder="Um filme por linha&#10;Oppenheimer&#10;Batman (2022)"></textarea>
-      <small>Dica: coloque o ano entre parênteses para evitar confusão, ex.: Batman (2022).</small>
-      <div class="row2 mt"><button id="bulkRun" type="button">Buscar todos</button></div>
-      <p id="bulkStatus" class="status"></p>
-      <div id="bulkNotFound" class="warn" hidden>
-        <div class="between"><strong id="bulkNotFoundTitle">Não encontrados</strong><button class="ghost" id="bulkCopy" type="button">Copiar</button></div>
-        <textarea id="bulkNotFoundText" rows="4" readonly></textarea>
+    <div class="tools">
+      <button class="icon-btn" id="tutBtn" type="button" aria-label="Abrir tutorial" title="Tutorial">?</button>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Alternar tema" title="Alternar tema">☼</button>
+    </div>
+  </header>
+
+  <main class="shell app-grid">
+    <aside class="sidebar">
+      <div class="side-card profile-card">
+        <span class="status-dot"></span>
+        <div>
+          <span class="side-label">MEU ESPAÇO</span>
+        </div>
       </div>
-      <div id="bulkFound" hidden>
-        <div class="between mt"><strong id="bulkCount"></strong><button id="bulkAdd" type="button">Adicionar à lista</button></div>
-        <div id="bulkRows"></div>
+
+      <nav class="side-nav" aria-label="Navegação">
+        <a class="active" href="#search-area"><span>⌕</span> Pesquisar</a>
+        <a href="#my-list"><span>▦</span> Minha lista</a>
+        <a href="#bulk-area"><span>＋</span> Importar lista</a>
+      </nav>
+
+      <div class="side-note">
+        <span class="note-orb"></span>
+        <strong>Recadinho:</strong>
+        <small>Esta interface surgiu a partir de uma necessidade: adicionar muitos filmes ao meu perfil do Letterboxd. Para não fazer um a um na mão, decidi automatizar tudo :), creio que seja útil para mais pessoas.</small>
+        <p><small> Feito com <span>♥</span> por <a href="https://github.com/yannsckr" target="_blank" rel="noopener">Ryan</a></small></p>
       </div>
-    </div>
-  </section>
+    </aside>
 
-  <section class="card">
-    <div class="between head">
-      <div><h2>Minha lista</h2><span class="muted" id="counter">0/0 avaliados</span></div>
-      <button id="csvBtn" type="button">⬇ Gerar CSV</button>
-    </div>
-    <div class="row2 filters">
-      <input id="filter" placeholder="Filtrar...">
-      <select id="filterState"><option value="all">Todos</option><option value="rated">Avaliados</option><option value="pending">Pendentes</option></select>
-    </div>
-    <div id="myList"></div>
-    <div class="end">
-      <a class="btn" href="https://letterboxd.com/import/" target="_blank" rel="noopener">Abrir Letterboxd Import ↗</a>
-      <small>Depois de gerar o CSV, envie o arquivo nessa página.</small>
-    </div>
-  </section>
-  <button class="link" id="clearAll" type="button">Limpar minha lista</button>
-</main>
+    <section class="content">
+      <section class="hero-card" id="search-area">
+        <div class="hero-top">
+          <div>
+            <span class="eyebrow"></span>
+            <h2>Adicione os filmes aqui:</h2>
+          </div>
+          <span class="pill pill-blue">Chave TMDB conectada</span>
+        </div>
 
-<footer>
-  <p>Feito com ❤️ por <a href="https://github.com/yannsckr" target="_blank" rel="noopener">Ryan</a></p>
-  <p>Dados de filmes: TMDB. O Letterboxd informa que seus metadados de filmes são fornecidos pelo TMDB.</p>
-</footer>
+        <nav class="seg" role="tablist" aria-label="Ferramentas">
+          <button class="tab on" data-tab="tabSearch" type="button">Pesquisar</button>
+          <button class="tab" data-tab="tabBulk" type="button">Importar lista</button>
+        </nav>
 
-<dialog id="tut">
-  <h2>Como usar</h2>
-  <ol>
-    <li><b>Adicione filmes.</b> Pesquise e toque no <b>+</b> do filme certo, ou cole uma lista na aba "Importar lista".</li>
-    <li><b>Avalie.</b> Toque na estrela; a metade esquerda dá meia estrela. Se quiser, escreva uma review.</li>
-    <li><b>Gere o CSV</b> em "Gerar CSV". Entram os filmes com nota ou review.</li>
-    <li><b>Importe no Letterboxd:</b> abra a página de importação, faça login, envie o arquivo, confira os filmes e confirme.</li>
-  </ol>
-  <p class="muted">Sua lista fica salva só neste navegador.</p>
-  <button id="tutClose" type="button">Entendi</button>
-</dialog>
+        <div id="tabSearch">
+          <div class="search-box">
+            <span class="search-icon">⌕</span>
+            <input id="search" placeholder="Digite um filme, ex.: Sonic 2" autocomplete="off">
+            <button id="searchBtn" type="button" class="primary-btn">Buscar</button>
+          </div>
+          <p id="status" class="status"></p>
+          <div id="results" class="results"></div>
+        </div>
+
+        <div id="tabBulk" hidden>
+          <div class="bulk-intro">
+            <span class="mini-orb orange"></span>
+            <div>
+              <strong>Importe vários filmes de uma vez</strong>
+              <small>Um filme por linha. Use o ano entre parênteses quando precisar.</small>
+            </div>
+          </div>
+          <textarea id="bulkText" rows="6" placeholder="Oppenheimer&#10;Batman (2022)"></textarea>
+          <small>Dica: coloque o ano entre parênteses para evitar confusão, ex.: Batman (2022).</small>
+          <div class="row2 mt"><button id="bulkRun" type="button" class="primary-btn">Buscar todos</button></div>
+          <p id="bulkStatus" class="status"></p>
+
+          <div id="bulkNotFound" class="warn" hidden>
+            <div class="between"><strong id="bulkNotFoundTitle">Não encontrados</strong><button class="ghost" id="bulkCopy" type="button">Copiar</button></div>
+            <textarea id="bulkNotFoundText" rows="4" readonly></textarea>
+          </div>
+
+          <div id="bulkFound" hidden>
+            <div class="between mt"><strong id="bulkCount"></strong><button id="bulkAdd" type="button" class="primary-btn">Adicionar à lista</button></div>
+            <div id="bulkRows"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="list-card" id="my-list">
+        <div class="between head">
+          <div>
+            <h2>Minha lista</h2>
+            <span class="muted" id="counter">0/0 avaliados</span>
+          </div>
+          <button id="csvBtn" type="button" class="secondary-btn">↓ Gerar CSV</button>
+        </div>
+
+        <div class="filter-row">
+          <label class="filter-field">
+            <span>⌕</span>
+            <input id="filter" placeholder="Filtrar filmes...">
+          </label>
+          <select id="filterState">
+            <option value="all">Todos</option>
+            <option value="rated">Avaliados</option>
+            <option value="pending">Pendentes</option>
+          </select>
+        </div>
+
+        <div id="myList"></div>
+
+        <div class="end">
+          <a class="btn import-link" href="https://letterboxd.com/import/" target="_blank" rel="noopener">Abrir Letterboxd Import ↗</a>
+          <small>Depois de gerar o CSV, envie o arquivo nessa página.</small>
+        </div>
+      </section>
+
+      <button class="clear-link" id="clearAll" type="button">Limpar minha lista</button>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <div class="footer-orb"></div>
+    <p>Este é um projeto acadêmico, criado em apenas dois dias.</p>
+    <p>Por isso pode conter erros e imperfeições. Caso encontre, favor reporte à pessoa que te enviou o site.</p>
+  </footer>
+
+  <dialog id="tut">
+    <span class="dialog-kicker">GUIA RÁPIDO</span>
+    <h2>Como usar</h2>
+    <ol>
+      <li><b>Adicione filmes.</b> Pesquise e toque no <b>+</b> do filme certo, ou cole uma lista na aba "Importar lista".</li>
+      <li><b>Avalie.</b> Toque na estrela; a metade esquerda dá meia estrela. Se quiser, escreva uma review.</li>
+      <li><b>Gere o CSV após adicionar e avaliar todos os filmes</b> em "Gerar CSV". Entram os filmes com nota ou review.</li>
+      <li><b>Importe no Letterboxd:</b> abra a página de importação, faça login, envie o arquivo, confira os filmes e confirme.</li>
+    </ol>
+    <p class="muted">Sua lista fica salva só neste navegador.</p>
+    <button id="tutClose" type="button" class="primary-btn">Entendi!</button>
+  </dialog>
+
 <script src="config.js"></script>
 <script src="app.js"></script>
 </body>
