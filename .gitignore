@@ -1,0 +1,22 @@
+# Chave da API (nunca commitar)
+config.js
+.env
+.env.*
+
+# Dependências e builds
+node_modules/
+dist/
+build/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
